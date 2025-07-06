@@ -43,4 +43,3 @@ next-env.d.ts
 package.json
 package-lock.json
 
-client.ts
