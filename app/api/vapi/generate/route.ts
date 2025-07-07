@@ -17,31 +17,42 @@ export async function POST(request: Request) {
       The job role is ${role}. 
       The job experience level is ${level}. 
       The techstack used in the job is: ${techstack}. 
-      The focus obetween behavioural and technical questions should lean towards: ${type}. 
-      The amount of questions reqiured is: ${amount}. 
-      Please return only the questions, without an additional text. The questions are going to be read by voice assistant so do no use"/" or "*" or any other special characters whic might break the voice assistant. 
+      The focus between behavioural and technical questions should lean towards: ${type}. 
+      The amount of questions required is: ${amount}. 
+      Please return only the questions, without any additional text. The questions are going to be read by a voice assistant so do not use "/" or "*" or any special characters that might break it. 
       Return the questions formatted like this:
       ["Question 1","Question 2","Question 3"]
       
       Thank you! <3`,
     });
 
+    // Clean and parse questions safely
+    const cleanedQuestions = JSON.parse(
+      questions
+        .trim()
+        .replace(/^```json|```$/g, "")
+        .trim()
+    );
+
     const interview = {
       role,
       type,
       level,
       techstack: techstack.split(","),
-      questions: JSON.parse(questions),
+      questions: cleanedQuestions,
       userId: userid,
       finalized: true,
       coverImage: getRandomInterviewCover(),
       createdAt: new Date().toISOString(),
     };
+
     await db.collection("interviews").add(interview);
     return Response.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error(error);
-
-    return Response.json({ success: false, error }, { status: 500 });
+    console.error("Error generating or parsing questions:", error);
+    return Response.json(
+      { success: false, error: String(error) },
+      { status: 500 }
+    );
   }
 }
