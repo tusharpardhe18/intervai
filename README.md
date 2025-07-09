@@ -1,6 +1,7 @@
 <div align="center">
+  <h1>IntervAI</h1>
   <br />
-      <img src="https://github.com/user-attachments/assets/1c0131c7-9f2d-4e3b-b47c-9679e76d8f9a" alt="Project Banner">
+      <img src="https://github.com/tusharpardhe18/MyPortfolio/blob/main/public/assets/projects/intervai.PNG" alt="Project Banner">
   <br />
   
   <div>
