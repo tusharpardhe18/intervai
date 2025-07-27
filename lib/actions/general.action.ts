@@ -119,10 +119,10 @@ export async function getFeedbackByInterviewId(
     return null;
   }
 
-  const feebackDoc = feedback.docs[0];
+  const feedbackDoc = feedback.docs[0];
 
   return {
-    id: feebackDoc.id,
-    ...feebackDoc.data(),
+    id: feedbackDoc.id,
+    ...feedbackDoc.data(),
   } as Feedback;
 }
