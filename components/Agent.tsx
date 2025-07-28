@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { vapi } from "@/lib/vapi.sdk";
 import { interviewer } from "@/constants";
 import { createFeedback } from "@/lib/actions/general.action";
+import { toast } from "sonner";
 
 enum CallStatus {
   INACTIVE = "INACTIVE",
@@ -32,6 +33,7 @@ const Agent = ({
   const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
   const [messages, setMessages] = useState<SavedMessage[]>([]);
   const lastMessage = messages[messages.length - 1];
+  const [callLoading, setCallLoading] = useState(false);
 
   useEffect(() => {
     const onCallStart = () => {
@@ -80,18 +82,23 @@ const Agent = ({
   }, []);
 
   const handleGenerateFeedback = async (messages: SavedMessage[]) => {
-    console.log("Generate feedback here.");
+    try {
+      const { success, feedbackId: id } = await createFeedback({
+        interviewId: interviewId!,
+        userId: userId!,
+        transcript: messages,
+      });
 
-    const { success, feedbackId: id } = await createFeedback({
-      interviewId: interviewId!,
-      userId: userId!,
-      transcript: messages,
-    });
-
-    if (success && id) {
-      router.push(`/interview/&{interview}/feedback`);
-    } else {
-      console.log("Error saving feedback");
+      if (success && id) {
+        router.push(`/interview/${interviewId}/feedback`);
+      } else {
+        toast.error("Error saving feedback. Please try again.");
+        router.push("/");
+      }
+    } catch (error) {
+      toast.error(
+        "An error occurred while generating feedback. Please try again."
+      );
       router.push("/");
     }
   };
@@ -107,34 +114,38 @@ const Agent = ({
   }, [messages, CallStatus, type, userId]);
 
   const handleCall = async () => {
+    setCallLoading(true);
     setCallStatus(CallStatus.CONNECTING);
-
-    if (type === "generate") {
-      await vapi.start(
-        undefined,
-        undefined,
-        undefined,
-        process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!,
-        {
-          variableValues: {
-            username: userName,
-            userid: userId,
-          },
+    try {
+      if (type === "generate") {
+        await vapi.start(
+          undefined,
+          undefined,
+          undefined,
+          process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!,
+          {
+            variableValues: {
+              username: userName,
+              userid: userId,
+            },
+          }
+        );
+      } else {
+        let formattedQuestions = "";
+        if (questions) {
+          formattedQuestions = questions
+            .map((question) => `- ${question}`)
+            .join("\n");
         }
-      );
-    } else {
-      let formattedQuestions = "";
-      if (questions) {
-        formattedQuestions = questions
-          .map((question) => `- ${question}`)
-          .join("\n");
-      }
 
-      await vapi.start(interviewer, {
-        variableValues: {
-          questions: formattedQuestions,
-        },
-      });
+        await vapi.start(interviewer, {
+          variableValues: {
+            questions: formattedQuestions,
+          },
+        });
+      }
+    } finally {
+      setCallLoading(false);
     }
   };
 
@@ -195,7 +206,11 @@ const Agent = ({
 
       <div className="w-full flex justify-center">
         {callStatus !== "ACTIVE" ? (
-          <button className="relative btn-call" onClick={() => handleCall()}>
+          <button
+            className="relative btn-call"
+            onClick={() => handleCall()}
+            disabled={callLoading || callStatus === CallStatus.CONNECTING}
+          >
             <span
               className={cn(
                 "absolute animate-ping rounded-full opacity-75",
@@ -203,7 +218,11 @@ const Agent = ({
               )}
             />
             <span className="relative">
-              {isCallInactiveOrFinished ? "Call" : ". . . "}
+              {callLoading || callStatus === CallStatus.CONNECTING
+                ? "Connecting..."
+                : isCallInactiveOrFinished
+                ? "Call"
+                : ". . . "}
             </span>
           </button>
         ) : (

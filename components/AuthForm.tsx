@@ -16,6 +16,8 @@ import {
 } from "firebase/auth";
 import { auth } from "@/firebase/client";
 import { signIn, signUp } from "@/lib/actions/auth.action";
+import { useState } from "react";
+import Loader from "@/components/ui/loader";
 
 const authFormSchema = (type: FormType) => {
   return z.object({
@@ -28,6 +30,7 @@ const authFormSchema = (type: FormType) => {
 const AuthForm = ({ type }: { type: FormType }) => {
   const router = useRouter();
   const formSchema = authFormSchema(type);
+  const [loading, setLoading] = useState(false);
 
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
@@ -41,6 +44,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setLoading(true);
     try {
       if (type === "sign-up") {
         const { name, email, password } = values;
@@ -92,6 +96,8 @@ const AuthForm = ({ type }: { type: FormType }) => {
     } catch (error) {
       console.log(error);
       toast.error(`There was an error: ${error}`);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -100,6 +106,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
   return (
     <div className="card-border lg:min-w-[566px]">
       <div className="flex flex-col gap-6 card py-14 px-10">
+        {loading && <Loader />}
         <div className="flex flex-row  gap-2  justify-center">
           <Image src="/logo.svg" alt="logo" height={32} width={38} />
           <h2 className="text-primary-100">IntervAI</h2>
@@ -133,8 +140,14 @@ const AuthForm = ({ type }: { type: FormType }) => {
               placeholder="Your Password"
               type="password"
             />
-            <Button className="btn" type="submit">
-              {isSignIn ? "Sign in" : "Create an Account"}
+            <Button className="btn" type="submit" disabled={loading}>
+              {loading
+                ? isSignIn
+                  ? "Signing in..."
+                  : "Creating..."
+                : isSignIn
+                ? "Sign in"
+                : "Create an Account"}
             </Button>
           </form>
         </Form>
