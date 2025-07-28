@@ -1,3 +1,5 @@
+"use client"
+
 import type { Metadata } from "next";
 import { Mona_Sans } from "next/font/google";
 import "./globals.css";
@@ -11,7 +13,7 @@ const monaSans = Mona_Sans({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
+export const Metadata = {
   title: "IntervAI",
   description: "An AI-powered platform for preparing for mock interviews.",
 };
